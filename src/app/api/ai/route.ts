@@ -1,14 +1,21 @@
-import { openrouter } from "@/lib/open-router";
-import { generateText } from "ai";
-import { NextResponse } from "next/server";
+import { openrouter } from "@/ai/open-router";
+import { tools } from "@/ai/tools";
+import { streamText } from "ai";
 import { NextRequest } from "next/server";
 
-export async function GET(request: NextRequest) {
-  const result = await generateText({
-    model: openrouter.chat('openai/chatgpt-4o-latest'),
-    prompt: 'Traduza "Hello World" para português!',
-    system: 'Você é uma AI especializada em tradução, sempre retorne da maneira sucinta possível.'
+export async function POST(request: NextRequest) {
+  const { messages } = await request.json()
+
+  const result = streamText({
+    model: openrouter.chat('openai/gpt-4o-2024-11-20'),
+    tools,
+    messages,
+    maxSteps: 5,
+    toolChoice: 'required',
+    system: `
+      Sempre responda em markdown sem aspas no início ou fim da mensagem.
+    `,
   })
 
-  return NextResponse.json({ message: result.text })
+  return result.toDataStreamResponse()
 }
